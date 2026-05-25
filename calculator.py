@@ -45,12 +45,13 @@ def calc_steam_to_third_party(buy_price, sell_price, commission_pct):
 
 def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_comm_entry):
     try:
-        buy_price = float(buy_entry.get())
+        buy_str = buy_entry.get().strip()
+        buy_price = float(buy_str) if buy_str else None
         sell_price = float(sell_entry.get())
         commission_pct = float(comm_entry.get())
         
         if op_type == "to_steam":
-            commission, profit = calc_third_party_to_steam(buy_price, sell_price, commission_pct)
+            commission, profit = calc_third_party_to_steam(buy_price if buy_price is not None else 0.0, sell_price, commission_pct)
             op_name = "Сторонний сайт → Steam"
             try:
                 other_comm = float(other_comm_entry.get())
@@ -58,7 +59,7 @@ def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_co
             except ValueError:
                 save_config(commission_pct, 5.0)
         else:
-            commission, profit = calc_steam_to_third_party(buy_price, sell_price, commission_pct)
+            commission, profit = calc_steam_to_third_party(buy_price if buy_price is not None else 0.0, sell_price, commission_pct)
             op_name = "Steam → сторонний сайт"
             try:
                 other_comm = float(other_comm_entry.get())
@@ -67,19 +68,24 @@ def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_co
                 save_config(15.0, commission_pct)
             
         result_text = f"Операция: {op_name}\n"
-        result_text += f"Покупка: {buy_price:.2f}\n"
+        if buy_price is not None:
+            result_text += f"Покупка: {buy_price:.2f}\n"
         result_text += f"Продажа: {sell_price:.2f}\n"
         result_text += f"Комиссия ({commission_pct}%): {commission:.2f}\n"
         result_text += f"Итог продажи (чистыми): {sell_price - commission:.2f}\n"
         
-        if profit > 0:
-            result_text += f"Прибыль: {profit:.2f}"
-        elif profit < 0:
-            result_text += f"Убыток: {abs(profit):.2f}"
+        if buy_price is not None:
+            if profit > 0:
+                result_text += f"Прибыль: {profit:.2f}"
+            elif profit < 0:
+                result_text += f"Убыток: {abs(profit):.2f}"
+            else:
+                result_text += f"Прибыль: {profit:.2f}"
+            result_color = "green" if profit > 0 else "red" if profit < 0 else "black"
         else:
-            result_text += f"Прибыль: {profit:.2f}"
+            result_color = "black"
             
-        result_label.config(text=result_text, fg="green" if profit > 0 else "red" if profit < 0 else "black")
+        result_label.config(text=result_text, fg=result_color)
     except ValueError:
         messagebox.showerror("Ошибка", "Пожалуйста, введите корректные числа.")
 
