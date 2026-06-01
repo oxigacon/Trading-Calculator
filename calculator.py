@@ -120,7 +120,7 @@ def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_co
 def main():
     root = tk.Tk()
     root.title("CS2 Trade Calculator")
-    root.geometry("480x640")
+    root.geometry("480x540")
     root.resizable(True, True)
 
     steam_default_comm, third_party_default_comm = load_config()
