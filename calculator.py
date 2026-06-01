@@ -120,7 +120,7 @@ def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_co
 def main():
     root = tk.Tk()
     root.title("CS2 Trade Calculator")
-    root.geometry("480x800")
+    root.geometry("480x640")
     root.resizable(True, True)
 
     steam_default_comm, third_party_default_comm = load_config()
@@ -172,37 +172,6 @@ def main():
     calc_btn2.grid(row=3, column=0, columnspan=2, pady=10)
     res_label2.grid(row=4, column=0, columnspan=2, sticky="w")
 
-    # Калькулятор процентов
-    frame3 = tk.LabelFrame(root, text="Калькулятор процентов", padx=10, pady=10)
-    frame3.pack(padx=10, pady=10, fill="x")
-
-    tk.Label(frame3, text="Число:").grid(row=0, column=0, sticky="w", pady=5)
-    pct_entry1 = tk.Entry(frame3, width=20)
-    pct_entry1.grid(row=0, column=1, padx=10, pady=5)
-
-    tk.Label(frame3, text="От числа:").grid(row=1, column=0, sticky="w", pady=5)
-    pct_entry2 = tk.Entry(frame3, width=20)
-    pct_entry2.grid(row=1, column=1, padx=10, pady=5)
-
-    res_label3 = tk.Label(frame3, text="", justify="left", font=("Arial", 10))
-
-    def calculate_percentage():
-        try:
-            num1_str = pct_entry1.get().strip().replace(',', '.')
-            num2_str = pct_entry2.get().strip().replace(',', '.')
-            num1 = float(num1_str)
-            num2 = float(num2_str)
-            if num2 == 0:
-                res_label3.config(text="Деление на ноль!", fg="red")
-            else:
-                pct = (num1 / num2) * 100
-                res_label3.config(text=f"Результат: {pct:.2f}%", fg="black")
-        except ValueError:
-            res_label3.config(text="Введите корректные числа", fg="red")
-
-    calc_btn3 = tk.Button(frame3, text="Рассчитать", command=calculate_percentage)
-    calc_btn3.grid(row=2, column=0, columnspan=2, pady=10)
-    res_label3.grid(row=3, column=0, columnspan=2, sticky="w")
 
     def on_closing():
         try:
