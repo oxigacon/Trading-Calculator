@@ -11,6 +11,29 @@ import os
 import sys
 import json
 
+# Fix for Tcl/Tk not found error on some Windows Python installations
+if sys.platform == 'win32':
+    python_dir = sys.base_prefix
+    tcl_dir = os.path.join(python_dir, 'tcl', 'tcl8.6')
+    tk_dir = os.path.join(python_dir, 'tcl', 'tk8.6')
+    
+    # Fallback just in case sys.base_prefix is somehow incorrect but we can extract it from tkinter module path
+    if not os.path.exists(tcl_dir):
+        try:
+            import tkinter
+            tkinter_dir = os.path.dirname(tkinter.__file__) # e.g. ...\Lib\tkinter
+            lib_dir = os.path.dirname(tkinter_dir) # e.g. ...\Lib
+            python_dir_fallback = os.path.dirname(lib_dir) # e.g. ...\Python314
+            tcl_dir = os.path.join(python_dir_fallback, 'tcl', 'tcl8.6')
+            tk_dir = os.path.join(python_dir_fallback, 'tcl', 'tk8.6')
+        except Exception:
+            pass
+
+    if os.path.exists(tcl_dir):
+        os.environ['TCL_LIBRARY'] = tcl_dir
+    if os.path.exists(tk_dir):
+        os.environ['TK_LIBRARY'] = tk_dir
+
 def get_config_path():
     if getattr(sys, 'frozen', False):
         base_dir = os.path.dirname(sys.executable)
@@ -75,12 +98,17 @@ def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_co
         result_text += f"Итог продажи (чистыми): {sell_price - commission:.2f}\n"
         
         if buy_price is not None:
+            profit_pct_str = ""
+            if buy_price > 0:
+                profit_pct = (profit / buy_price) * 100
+                profit_pct_str = f" ({profit_pct:.2f}%)"
+                
             if profit > 0:
-                result_text += f"Прибыль: {profit:.2f}"
+                result_text += f"Прибыль: {profit:.2f}{profit_pct_str}"
             elif profit < 0:
-                result_text += f"Убыток: {abs(profit):.2f}"
+                result_text += f"Убыток: {abs(profit):.2f}{profit_pct_str}"
             else:
-                result_text += f"Прибыль: {profit:.2f}"
+                result_text += f"Прибыль: {profit:.2f}{profit_pct_str}"
             result_color = "green" if profit > 0 else "red" if profit < 0 else "black"
         else:
             result_color = "black"
@@ -92,7 +120,7 @@ def calculate(op_type, buy_entry, sell_entry, comm_entry, result_label, other_co
 def main():
     root = tk.Tk()
     root.title("CS2 Trade Calculator")
-    root.geometry("480x640")
+    root.geometry("480x800")
     root.resizable(True, True)
 
     steam_default_comm, third_party_default_comm = load_config()
@@ -143,6 +171,38 @@ def main():
     calc_btn2 = tk.Button(frame2, text="Рассчитать", command=lambda: calculate("to_third", buy_entry2, sell_entry2, comm_entry2, res_label2, comm_entry1))
     calc_btn2.grid(row=3, column=0, columnspan=2, pady=10)
     res_label2.grid(row=4, column=0, columnspan=2, sticky="w")
+
+    # Калькулятор процентов
+    frame3 = tk.LabelFrame(root, text="Калькулятор процентов", padx=10, pady=10)
+    frame3.pack(padx=10, pady=10, fill="x")
+
+    tk.Label(frame3, text="Число:").grid(row=0, column=0, sticky="w", pady=5)
+    pct_entry1 = tk.Entry(frame3, width=20)
+    pct_entry1.grid(row=0, column=1, padx=10, pady=5)
+
+    tk.Label(frame3, text="От числа:").grid(row=1, column=0, sticky="w", pady=5)
+    pct_entry2 = tk.Entry(frame3, width=20)
+    pct_entry2.grid(row=1, column=1, padx=10, pady=5)
+
+    res_label3 = tk.Label(frame3, text="", justify="left", font=("Arial", 10))
+
+    def calculate_percentage():
+        try:
+            num1_str = pct_entry1.get().strip().replace(',', '.')
+            num2_str = pct_entry2.get().strip().replace(',', '.')
+            num1 = float(num1_str)
+            num2 = float(num2_str)
+            if num2 == 0:
+                res_label3.config(text="Деление на ноль!", fg="red")
+            else:
+                pct = (num1 / num2) * 100
+                res_label3.config(text=f"Результат: {pct:.2f}%", fg="black")
+        except ValueError:
+            res_label3.config(text="Введите корректные числа", fg="red")
+
+    calc_btn3 = tk.Button(frame3, text="Рассчитать", command=calculate_percentage)
+    calc_btn3.grid(row=2, column=0, columnspan=2, pady=10)
+    res_label3.grid(row=3, column=0, columnspan=2, sticky="w")
 
     def on_closing():
         try:
